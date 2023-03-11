@@ -1,0 +1,28 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: diplom
+  namespace: default
+  labels:
+    app: "diplom"
+    component: web
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: "diplom"
+      component: web
+  template:
+    metadata:
+      labels:
+        app: "diplom"
+        component: web
+    spec:
+      containers:
+        - name: diplom
+          image: cr.yandex/crplbtriubvbt4s95dg7/diplom-app:0.1
+          ports:
+            - name: diplom-cp
+              containerPort: 80
+              protocol: TCP
