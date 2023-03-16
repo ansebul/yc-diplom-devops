@@ -3,3 +3,7 @@ variable "yandex_folder_id" {
   default = "b1gdeku5jf5mvckdre6e"
 }
 
+variable "test_variable_id" {
+  type    = string
+  default = "test-value"
+}
