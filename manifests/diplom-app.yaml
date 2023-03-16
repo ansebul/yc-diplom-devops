@@ -19,10 +19,13 @@ spec:
         app: "diplom"
         component: web
     spec:
+      terminationGracePeriodSeconds: 30
       containers:
         - name: diplom
           image: cr.yandex/crplbtriubvbt4s95dg7/diplom-app:0.1
+          imagePullPolicy: Always
           ports:
             - name: diplom-cp
               containerPort: 80
               protocol: TCP
+

@@ -1,0 +1,130 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: atlantis
+spec:
+  serviceName: atlantis
+  replicas: 1
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0
+  selector:
+    matchLabels:
+      app: atlantis
+  template:
+    metadata:
+      labels:
+        app: atlantis
+    spec:
+      securityContext:
+        fsGroup: 1000 # Atlantis group (1000) read/write access to volumes.
+      containers:
+      - name: atlantis
+        image: ghcr.io/runatlantis/atlantis:v0.23.2 # 1. Replace <VERSION> with the most recent release.
+        env:
+        - name: ATLANTIS_REPO_ALLOWLIST
+          value: github.com/ansebul/yc-diplom-devops # 2. Replace this with your own repo allowlist.
+        ### GitHub Config ###
+        - name: ATLANTIS_GH_USER
+          value: ansebul # 3i. If you're using GitHub replace <YOUR_GITHUB_USER> with the username of your Atlantis GitHub user without the `@`.
+        - name: ATLANTIS_GH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: atlantis-vcs
+              key: token
+        - name: ATLANTIS_GH_WEBHOOK_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: atlantis-vcs
+              key: webhook-secret
+        ### End GitHub Config ###
+        - name: ATLANTIS_DATA_DIR
+          value: /atlantis
+        - name: ATLANTIS_PORT
+          value: "4141" # Kubernetes sets an ATLANTIS_PORT variable so we need to override.
+        ### Yandex Cloud Integration
+        - name: YC_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: token
+              name: atlantis-yc
+        - name: YC_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: access_key_id
+              name: atlantis-yc
+        - name: YC_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              key: secret_access_key
+              name: atlantis-yc
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - |-
+                echo "provider_installation {
+                 network_mirror {
+                  url = \"https://terraform-mirror.yandexcloud.net/\"
+                  include = [\"registry.terraform.io/*/*\"]
+                 }
+                 direct {
+                  exclude = [\"registry.terraform.io/*/*\"]
+                 }
+                }" > /home/atlantis/.terraformrc
+        ### End of Yandex Cloud Integration
+        volumeMounts:
+        - name: atlantis-data
+          mountPath: /atlantis
+        ports:
+        - name: atlantis
+          containerPort: 4141
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 100m
+          limits:
+            memory: 256Mi
+            cpu: 100m
+        livenessProbe:
+          # We only need to check every 60s since Atlantis is not a
+          # high-throughput service.
+          periodSeconds: 60
+          httpGet:
+            path: /healthz
+            port: 4141
+            # If using https, change this to HTTPS
+            scheme: HTTP
+        readinessProbe:
+          periodSeconds: 60
+          httpGet:
+            path: /healthz
+            port: 4141
+            # If using https, change this to HTTPS
+            scheme: HTTP
+  volumeClaimTemplates:
+  - metadata:
+      name: atlantis-data
+    spec:
+      accessModes: ["ReadWriteOnce"] # Volume should not be shared by multiple nodes.
+      resources:
+        requests:
+          # The biggest thing Atlantis stores is the Git repo when it checks it out.
+          # It deletes the repo after the pull request is merged.
+          storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: atlantis
+spec:
+  type: ClusterIP
+  ports:
+  - name: atlantis
+    port: 80
+    targetPort: 4141
+  selector:
+    app: atlantis

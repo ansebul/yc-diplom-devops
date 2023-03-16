@@ -50,7 +50,7 @@ resource "yandex_kubernetes_node_group" "k8s-group-1a" {
     location {
       zone = "ru-central1-a"
     }
-    # Почему не можем расположить группу в нескольких зонах:
+    # Вот почему не можем расположить группу в нескольких зонах:
     # Validation error: allocation_policy.locations: auto scale node groups can have only one location
     # location {
     #   zone = "ru-central1-b"

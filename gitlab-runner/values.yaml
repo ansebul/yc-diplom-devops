@@ -1,0 +1,40 @@
+---
+image:
+  registry: registry.gitlab.com
+  image: gitlab-org/gitlab-runner
+  tag: ubuntu
+podSecurityContext:
+  ## Note: values for the ubuntu image:
+  runAsUser: 999
+  fsGroup: 999
+hostAliases:
+  - ip: "84.201.148.70"
+    hostnames:
+    - "ansebul.gitlab.yandexcloud.net"
+imagePullPolicy: IfNotPresent
+gitlabUrl: https://ansebul.gitlab.yandexcloud.net./
+runnerRegistrationToken: "GR1348941TY-BMx5xk9soyPS2K7gp"
+terminationGracePeriodSeconds: 3600
+concurrent: 10
+checkInterval: 30
+poll_timeout: 360
+sessionServer:
+ enabled: false
+rbac:
+  create: true
+  clusterWideAccess: true
+  podSecurityPolicy:
+    enabled: false
+    resourceNames:
+      - gitlab-runner
+runners:
+  config: |
+    [[runners]]
+      pre_clone_script = 'echo "84.201.148.70 ansebul.gitlab.yandexcloud.net" >> /etc/hosts && echo "44.205.64.79 registry-1.docker.io" >> /etc/hosts && echo "44.205.64.79 auth.docker.io" >> /etc/hosts && echo "nameserver 8.8.8.8" >> /etc/resolv.conf'
+      [runners.kubernetes]
+        namespace = "{{.Release.Namespace}}"
+        image = "ubuntu:20.04"
+        privileged = true
+        [[runners.kubernetes.dns_config.options]]
+          name = "ndots"
+          value = "1"

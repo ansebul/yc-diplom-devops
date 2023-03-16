@@ -55,3 +55,13 @@ resource "yandex_resourcemanager_folder_iam_binding" "images-puller" {
     "serviceAccount:${yandex_iam_service_account.k8s-account.id}"
   ]
 }
+
+resource "yandex_resourcemanager_folder_iam_binding" "images-pusher" {
+  # Для работы с Container Registry назначается роль "container-registry.images.pusher".
+  # https://cloud.yandex.ru/docs/iam/concepts/access-control/roles#cr-images-pusher
+  folder_id = var.yandex_folder_id
+  role      = "container-registry.images.pusher"
+  members = [
+    "serviceAccount:${yandex_iam_service_account.k8s-account.id}"
+  ]
+}

@@ -58,13 +58,9 @@ resource "yandex_kubernetes_cluster" "k8s-regional" {
     yandex_resourcemanager_folder_iam_binding.k8s-clusters-agent,
     yandex_resourcemanager_folder_iam_binding.vpc-public-admin,
     yandex_resourcemanager_folder_iam_binding.images-puller,
-    # FIXME - а надо ли оно тут???
-    #yandex_resourcemanager_folder_iam_binding.load-balancer-admin
   ]
 
   kms_provider {
     key_id = yandex_kms_symmetric_key.key-g.id
   }
 }
-
-
